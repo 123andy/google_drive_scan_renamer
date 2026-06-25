@@ -56,6 +56,14 @@ python3 auth_setup.py
 
 This opens a browser for consent and writes `token.json` in the repo root.
 
+If you want to force a brand new token flow (for example after revoking credentials), run:
+
+```bash
+python3 auth_setup.py --force-reauth
+```
+
+This removes an existing `token.json` first, then starts a fresh browser auth session.
+
 Convert `token.json` into a single-line JSON string and put it in `.env`:
 
 ```bash
