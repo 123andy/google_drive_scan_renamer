@@ -1,115 +1,38 @@
 # google_drive_scan_renamer
-An ai-mediated file renaming tool for scanned pdfs
 
-## Dockerized Python setup with `.env` secrets
+An AI-mediated filing tool for scanned documents. A ScanSnap scanner drops PDFs and images
+into a Google Drive folder; this batch OCRs each one, asks an LLM for a descriptive
+filename **and** a structured `.md` sidecar, then files both into `PROCESSED/` and drains
+the inbox.
 
-This repo includes a Dockerized Python worker that:
+> **Status:** largely superseded by the **personal-vault** project, which takes over most of
+> this lifting. Kept here as the versioned home of the working ScanSnap pipeline.
 
-- Reads `BASE_DRIVE_URL` and scans top-level `.pdf` files in that folder (no recursion).
-- Extracts `scan_date` if filename starts with `yyyy_mm_dd_`.
-- Runs OCR with `ocrmypdf`.
-- Sends OCR text to OpenAI to generate a filename (<60 chars, lowercase, underscores).
-- Prepends `scan_date` when present.
-- Renames and moves each file into a destination subfolder in Drive (`DEST_SUBFOLDER`, default `RENAMED`).
+## Where things are
 
-### 1) Create your local `.env`
+- **`scripts/`** — all the code (Dockerized processor + host-side launcher and CLIs).
+  Start with [`scripts/README.md`](scripts/README.md) for setup, running, and the review queue.
+- **`docs/SIDECAR_SPEC.md`** — the authoritative sidecar contract (frontmatter fields, body
+  sections, the correct-don't-fabricate rules).
+- **`CLAUDE.md`** — the design/conventions doc for the pipeline and the Drive folder layout.
 
-```bash
-cp .env.example .env
-```
-
-Then edit `.env` and set your real secret values:
-
-```env
-BASE_DRIVE_URL=https://drive.google.com/drive/folders/1WTysUIyp01kod80W6MWk-LQPgBz920dp
-GOOGLE_OAUTH_CLIENT_ID=...
-GOOGLE_OAUTH_CLIENT_SECRET=...
-GOOGLE_OAUTH_REFRESH_TOKEN=...
-GOOGLE_OAUTH_TOKEN_JSON=
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4.1-mini
-DEST_SUBFOLDER=RENAMED
-```
-
-Auth behavior:
-
-- Drive auth is OAuth-only via `get_creds()` and `service = build("drive", "v3", ...)`.
-- Provide either:
-	- `GOOGLE_OAUTH_TOKEN_JSON` (authorized user token JSON), or
-	- `GOOGLE_OAUTH_CLIENT_ID` + `GOOGLE_OAUTH_CLIENT_SECRET` + `GOOGLE_OAUTH_REFRESH_TOKEN`.
-
-### 1.1) Generate `token.json` with `auth_setup.py` (recommended)
-
-`auth_setup.py` creates a Google OAuth token file (`token.json`) that this app can read via `GOOGLE_OAUTH_TOKEN_JSON`.
-
-1. In Google Cloud Console, create/select a project.
-2. Enable the **Google Drive API** for that project.
-3. Configure the OAuth consent screen.
-4. Create OAuth client credentials (Desktop App).
-5. Download the OAuth client file and save it at the repo root as `credentials.json`.
-
-Run the setup script:
+## Quick start
 
 ```bash
-python3 auth_setup.py
+cp scripts/.env.example scripts/.env     # add OPENAI_API_KEY
+export INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-123andy@gmail.com/My Drive/ScanSnap"
+cd scripts && DRY_RUN=true ./run.sh      # analyze + log only; drop DRY_RUN to file for real
 ```
 
-This opens a browser for consent and writes `token.json` in the repo root.
+Docker is the only host requirement — the OCR toolchain (`ocrmypdf`, `tesseract`,
+`ghostscript`) ships inside the image. `INBOX_DIR` is mandatory: the code lives in this
+checkout rather than inside the Drive folder, and the launcher refuses to run against a
+directory that doesn't look like the scan inbox.
 
-If you want to force a brand new token flow (for example after revoking credentials), run:
+## History
 
-```bash
-python3 auth_setup.py --force-reauth
-```
-
-This removes an existing `token.json` first, then starts a fresh browser auth session.
-
-Convert `token.json` into a single-line JSON string and put it in `.env`:
-
-```bash
-python3 -c 'import json; print(json.dumps(json.load(open("token.json")), separators=(",", ":")))'
-```
-
-Then set:
-
-```env
-GOOGLE_OAUTH_TOKEN_JSON={"token":"...","refresh_token":"...","client_id":"...","client_secret":"...","token_uri":"https://oauth2.googleapis.com/token","scopes":["https://www.googleapis.com/auth/drive"]}
-```
-
-When `GOOGLE_OAUTH_TOKEN_JSON` is set, you can leave `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, and `GOOGLE_OAUTH_REFRESH_TOKEN` empty.
-
-### 2) Build and run with Docker Compose
-
-```bash
-docker compose up --build
-```
-
-`docker-compose.yml` uses:
-
-```yaml
-env_file:
-	- .env
-```
-
-So variables from `.env` are injected into the container at runtime.
-
-### 3) Alternative: run without Compose
-
-```bash
-docker build -t google-drive-scan-renamer .
-docker run --rm --env-file .env google-drive-scan-renamer
-```
-
-## Security notes
-
-- `.env` is ignored by git and `.dockerignore`.
-- Keep only placeholders in `.env.example`.
-- Never commit real secrets.
-
-## OAuth scope requirement
-
-When creating your OAuth refresh token, include Drive write scope such as:
-
-- `https://www.googleapis.com/auth/drive`
-
-Without write scope, rename/move operations will fail.
+The pipeline was developed in place inside the Drive folder
+(`My Drive/ScanSnap/scripts/`) and migrated into this repo on 2026-07-30, replacing the
+original single-file prototype (`app/main.py`) that only renamed top-level PDFs into
+`RENAMED/` via the Drive API. That prototype is preserved at the git tag
+**`pre-scansnap-migration`**.

@@ -1,0 +1,17 @@
+services:
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      INBOX_DIR: /work/in
+      OUTPUT_DIR: /work/out
+      STATE_DIR: /work/state
+    volumes:
+      # A plain local scratch dir staged by stage_and_run.py. We do NOT bind-mount
+      # the Google Drive folder directly: reading Drive's File Provider virtual files
+      # through Docker's file sharing deadlocks (Errno 35). The host copies scans in
+      # and moves results back out; the container only sees a normal directory.
+      - "${WORK_DIR:?set WORK_DIR (use ./run.sh or stage_and_run.py)}:/work"
