@@ -20,7 +20,7 @@ the inbox.
 
 ```bash
 cp scripts/.env.example scripts/.env     # add OPENAI_API_KEY
-export INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-123andy@gmail.com/My Drive/ScanSnap"
+export INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-YOUR_GOOGLE_ACCOUNT@gmail.com/My Drive/ScanSnap"
 cd scripts && DRY_RUN=true ./run.sh      # analyze + log only; drop DRY_RUN to file for real
 ```
 

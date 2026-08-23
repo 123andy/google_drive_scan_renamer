@@ -22,7 +22,7 @@ launcher needs to be told where the inbox is — `INBOX_DIR`. Without it `run.sh
 to start (staging the wrong directory would delete the wrong originals).
 
 ```bash
-export INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-123andy@gmail.com/My Drive/ScanSnap"
+export INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-YOUR_GOOGLE_ACCOUNT@gmail.com/My Drive/ScanSnap"
 cd scripts
 ./run.sh                  # process the inbox
 DRY_RUN=true ./run.sh     # OCR + analyze + log, but move/write nothing
@@ -102,5 +102,5 @@ scripts/
 Run every 15 minutes via the host's crontab:
 
 ```cron
-*/15 * * * * cd "/Users/andy/Projects/personal/google_drive_scan_renamer/scripts" && INBOX_DIR="/Users/andy/Library/CloudStorage/GoogleDrive-123andy@gmail.com/My Drive/ScanSnap" ./run.sh >> state/cron.log 2>&1
+*/15 * * * * cd "$HOME/Projects/personal/google_drive_scan_renamer/scripts" && INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-YOUR_GOOGLE_ACCOUNT@gmail.com/My Drive/ScanSnap" ./run.sh >> state/cron.log 2>&1
 ```

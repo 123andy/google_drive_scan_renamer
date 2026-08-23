@@ -50,7 +50,7 @@ if not os.getenv("INBOX_DIR") and not (INBOX_DIR / "PROCESSED").is_dir():
     raise SystemExit(
         f"Refusing to treat {INBOX_DIR} as the scan inbox (no PROCESSED/ in it).\n"
         "Set INBOX_DIR to the ScanSnap Drive folder, e.g.\n"
-        '  INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-123andy@gmail.com/My Drive/ScanSnap" ./run.sh'
+        '  INBOX_DIR="$HOME/Library/CloudStorage/GoogleDrive-YOUR_GOOGLE_ACCOUNT@gmail.com/My Drive/ScanSnap" ./run.sh'
     )
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", str(INBOX_DIR / "PROCESSED")))
 STATE_DIR = SCRIPTS_DIR / "state"
